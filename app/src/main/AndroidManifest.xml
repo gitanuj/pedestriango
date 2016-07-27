@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="go.pedestrian">
 
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -29,6 +31,10 @@
             android:name=".ScreenReceiver"
             android:enabled="true"
             android:exported="true"></receiver>
+        <service
+            android:name=".ActivityRecognizedService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
