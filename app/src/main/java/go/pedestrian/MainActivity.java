@@ -1,15 +1,14 @@
 package go.pedestrian;
 
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
+import android.widget.CompoundButton;
 
 public class MainActivity extends AppCompatActivity {
+
+    private SwitchCompat switchCompat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,24 +17,23 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        switchCompat = (SwitchCompat) findViewById(R.id.serviceswitch);
+        switchCompat.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            public void onCheckedChanged(CompoundButton compoundButton, boolean checked) {
+                SharedPrefs.getInstance().putBoolean(SharedPrefs.KEY_ON_OFF, checked);
             }
         });
-
-        registerScreenReceiver();
     }
 
-    private void registerScreenReceiver() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_USER_PRESENT);
+    @Override
+    protected void onResume() {
+        super.onResume();
 
-        registerReceiver(new ScreenReceiver(), filter);
+        bindSwitch(SharedPrefs.getInstance().getBoolean(SharedPrefs.KEY_ON_OFF, false));
+    }
+
+    private void bindSwitch(boolean on) {
+        switchCompat.setChecked(on);
     }
 }

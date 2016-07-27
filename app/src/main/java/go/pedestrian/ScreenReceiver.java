@@ -23,5 +23,8 @@ public class ScreenReceiver extends BroadcastReceiver {
         }
 
         Log.d("SCREEN_RECEIVER", action);
+
+        Intent serviceIntent = new Intent(context, TrackingService.class);
+        context.startService(serviceIntent);
     }
 }
