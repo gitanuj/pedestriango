@@ -2,6 +2,7 @@ package go.pedestrian;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.android.gms.location.ActivityRecognitionResult;
@@ -18,7 +19,7 @@ public class ActivityRecognizedService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if(ActivityRecognitionResult.hasResult(intent)) {
+        if (ActivityRecognitionResult.hasResult(intent)) {
             ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
             handleDetectedActivities(result.getMostProbableActivity());
         }
@@ -37,5 +38,7 @@ public class ActivityRecognizedService extends IntentService {
         }
 
         Log.d("ACTIVITY_REC_SERV", activity.toString());
+
+        App.getInstance().setDetectedActivity(activity);
     }
 }
