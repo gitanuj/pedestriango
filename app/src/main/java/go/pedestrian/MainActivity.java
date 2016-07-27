@@ -1,5 +1,6 @@
 package go.pedestrian;
 
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,9 +14,12 @@ import android.support.v7.widget.Toolbar;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.DetectedActivity;
 
 public class MainActivity extends AppCompatActivity {
+
+    public GoogleApiClient mApiClient;
 
     private SwitchCompat switchCompat;
 
