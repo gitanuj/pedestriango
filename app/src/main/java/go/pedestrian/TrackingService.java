@@ -86,7 +86,7 @@ public class TrackingService extends Service implements LocationListener {
     }
 
     private void stopActivityUpdates() {
-        if (mGoogleApiClient != null) {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(mGoogleApiClient, activityUpdatesPendingIntent);
         }
     }
@@ -103,7 +103,7 @@ public class TrackingService extends Service implements LocationListener {
     }
 
     private void stopLocationUpdates() {
-        if (mGoogleApiClient != null) {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, TrackingService.this);
         }
     }

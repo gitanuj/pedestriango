@@ -1,11 +1,14 @@
 package go.pedestrian;
 
 import android.app.Application;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.Location;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.google.android.gms.location.DetectedActivity;
@@ -83,12 +86,41 @@ public class App extends Application {
     public void setDetectedActivity(DetectedActivity detectedActivity) {
         this.detectedActivity = detectedActivity;
 
+        if (detectedActivity.getType() == DetectedActivity.ON_FOOT && checkForHazardsNearby()) {
+            NotificationCompat.Builder builder =
+                    new NotificationCompat.Builder(getContext())
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle("Stay alert")
+                            .setContentText("Hazard found nearby")
+                            .setDefaults(Notification.DEFAULT_VIBRATE)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+            NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.notify(1, builder.build());
+        }
+
         if (detectedActivity != null) {
             add(activities, detectedActivity);
             Intent intent = new Intent("activity");
             intent.putExtra("data", detectedActivity);
             LocalBroadcastManager.getInstance(sContext).sendBroadcast(intent);
         }
+    }
+
+    private boolean checkForHazardsNearby() {
+        DataBaseHelper dataBaseHelper = null;
+        try {
+            dataBaseHelper = new DataBaseHelper(App.getContext());
+            dataBaseHelper.createDataBase();
+            dataBaseHelper.openDataBase();
+            return dataBaseHelper.nearHazard(1, 1, 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (dataBaseHelper != null) {
+                dataBaseHelper.close();
+            }
+        }
+        return false;
     }
 
     public Location getLocation() {
