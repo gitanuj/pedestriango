@@ -12,7 +12,6 @@ import android.location.Location;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.location.DetectedActivity;
 
@@ -37,8 +36,6 @@ public class App extends Application {
 
     // might want to refactor where these go, like as a service or whatever
     private static DataBaseHelper HazardDB;
-
-    private boolean NearHazard;
 
     private BroadcastReceiver screenUpdatesReceiver = new BroadcastReceiver() {
         @Override
@@ -86,7 +83,7 @@ public class App extends Application {
     }
 
     private void initDB() {
-        HazardDB = new DataBaseHelper(getBaseContext());
+        HazardDB = new DataBaseHelper(sContext);
         try {
             HazardDB.createDataBase();
         } catch (IOException ioe) {
@@ -120,6 +117,7 @@ public class App extends Application {
                             .setPriority(NotificationCompat.PRIORITY_HIGH);
 
             NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
             notificationManager.notify(1, builder.build());
         }
 
@@ -132,17 +130,18 @@ public class App extends Application {
     }
 
     private boolean checkForHazardsNearby() {
-        DataBaseHelper dataBaseHelper = null;
-        try {
-            dataBaseHelper = new DataBaseHelper(App.getContext());
-            dataBaseHelper.createDataBase();
-            dataBaseHelper.openDataBase();
-            return dataBaseHelper.nearHazard(1, 1, 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (dataBaseHelper != null) {
-                dataBaseHelper.close();
+        Location latest = null;
+        if (locations.size() > 0) {
+            latest = locations.getLast();
+        }
+        if (latest != null) {
+            boolean hazardsNearby = HazardDB.nearHazard(latest.getLatitude(), latest.getLongitude(), latest.getAccuracy());
+            if (hazardsNearby) {
+                Log.i("App", "Hazards found nearby " + location);
+            } else {
+                Log.i("App", "No Hazards found nearby " + location);
             }
+            return hazardsNearby;
         }
         return false;
     }
@@ -159,13 +158,6 @@ public class App extends Application {
             Intent intent = new Intent("location");
             intent.putExtra("data", location);
             LocalBroadcastManager.getInstance(sContext).sendBroadcast(intent);
-
-            // Probably want to refactor where this is
-            NearHazard = HazardDB.nearHazard(location.getLatitude(), location.getLongitude(), location.getAccuracy());
-            if (NearHazard) {
-                Toast.makeText(getBaseContext(), "WATCH OUT", Toast.LENGTH_LONG).show();
-                Log.d("M", "Butt");
-            }
         }
     }
 
