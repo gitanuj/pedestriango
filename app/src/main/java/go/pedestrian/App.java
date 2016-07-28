@@ -1,15 +1,21 @@
 package go.pedestrian;
 
 import android.app.Application;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.SQLException;
 import android.location.Location;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.google.android.gms.location.DetectedActivity;
 
+import java.io.IOException;
 import java.util.LinkedList;
 
 public class App extends Application {
@@ -27,6 +33,9 @@ public class App extends Application {
     private Location location;
 
     private LinkedList<Location> locations = new LinkedList<>();
+
+    // might want to refactor where these go, like as a service or whatever
+    private static DataBaseHelper HazardDB;
 
     private BroadcastReceiver screenUpdatesReceiver = new BroadcastReceiver() {
         @Override
@@ -70,6 +79,21 @@ public class App extends Application {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_USER_PRESENT);
         registerReceiver(screenUpdatesReceiver, filter);
+        initDB();
+    }
+
+    private void initDB() {
+        HazardDB = new DataBaseHelper(sContext);
+        try {
+            HazardDB.createDataBase();
+        } catch (IOException ioe) {
+            throw new Error("Unable to create database");
+        }
+        try {
+            HazardDB.openDataBase();
+        } catch (SQLException sqle) {
+            throw sqle;
+        }
     }
 
     public static Context getContext() {
@@ -83,12 +107,43 @@ public class App extends Application {
     public void setDetectedActivity(DetectedActivity detectedActivity) {
         this.detectedActivity = detectedActivity;
 
+        if (detectedActivity.getType() == DetectedActivity.ON_FOOT && checkForHazardsNearby()) {
+            NotificationCompat.Builder builder =
+                    new NotificationCompat.Builder(getContext())
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle("Stay alert")
+                            .setContentText("Hazard found nearby")
+                            .setDefaults(Notification.DEFAULT_VIBRATE)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+            NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
+            notificationManager.notify(1, builder.build());
+        }
+
         if (detectedActivity != null) {
             add(activities, detectedActivity);
             Intent intent = new Intent("activity");
             intent.putExtra("data", detectedActivity);
             LocalBroadcastManager.getInstance(sContext).sendBroadcast(intent);
         }
+    }
+
+    private boolean checkForHazardsNearby() {
+        Location latest = null;
+        if (locations.size() > 0) {
+            latest = locations.getLast();
+        }
+        if (latest != null) {
+            boolean hazardsNearby = HazardDB.nearHazard(latest.getLatitude(), latest.getLongitude(), latest.getAccuracy());
+            if (hazardsNearby) {
+                Log.i("App", "Hazards found nearby " + location);
+            } else {
+                Log.i("App", "No Hazards found nearby " + location);
+            }
+            return hazardsNearby;
+        }
+        return false;
     }
 
     public Location getLocation() {
