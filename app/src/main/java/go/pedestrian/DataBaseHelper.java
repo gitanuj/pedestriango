@@ -159,10 +159,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
     // to you to create adapters for your views.
 
     public boolean nearHazard(double lat, double lon, double bound) {
-        String upperLatString = Double.toString(lat + bound);
-        String lowerLatString = Double.toString(lat - bound);
-        String upperLonString = Double.toString(lon + bound);
-        String lowerLonString = Double.toString(lon - bound);
+        double earthRad = 6378137.0;
+        double latBound = bound / earthRad;
+        double lonBound = bound / (earthRad * Math.cos(Math.PI * (lat / 180.0)));
+
+        String upperLatString = Double.toString(lat + latBound);
+        String lowerLatString = Double.toString(lat - latBound);
+        String upperLonString = Double.toString(lon + lonBound);
+        String lowerLonString = Double.toString(lon - lonBound);
         String selection = "lat <= ? AND lat >= ? AND lon <= ? AND lon >= ?";
 
         String[] selectionArgs = new String[]{
@@ -173,11 +177,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         };
 
         Cursor query = myDataBase.query("danger_nodes", null, selection, selectionArgs, null, null, null, null);
-
-        Cursor cursor = myDataBase.rawQuery("SELECT * FROM danger_nodes WHERE lat <= 67.6505 AND lat >= 27.6506 AND lon <= -102.128 AND lon >= -142.128", null); // testing
-        Cursor bb = myDataBase.query("danger_nodes", null, null, null, null, null, null, null); // testing delete
-        int doubt = bb.getCount();  // testing delete
-        int pain = cursor.getCount();  // testing delete
         int count = query.getCount();
         query.close();
         boolean nearHazards = count > 0;
