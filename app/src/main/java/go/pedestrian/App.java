@@ -5,11 +5,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.SQLException;
 import android.location.Location;
+import android.provider.ContactsContract;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.location.DetectedActivity;
 
+import java.io.IOException;
 import java.util.LinkedList;
 
 public class App extends Application {
@@ -27,6 +32,11 @@ public class App extends Application {
     private Location location;
 
     private LinkedList<Location> locations = new LinkedList<>();
+
+    // might want to refactor where these go, like as a service or whatever
+    private static DataBaseHelper HazardDB;
+
+    private boolean NearHazard;
 
     private BroadcastReceiver screenUpdatesReceiver = new BroadcastReceiver() {
         @Override
@@ -70,6 +80,20 @@ public class App extends Application {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_USER_PRESENT);
         registerReceiver(screenUpdatesReceiver, filter);
+        initDB();
+    }
+
+    private void initDB() {
+        HazardDB = new DataBaseHelper(getBaseContext());
+        try {
+            HazardDB.createDataBase();
+        } catch (IOException ioe) {
+            throw new Error("Unable to create database");
+        } try {
+            HazardDB.openDataBase();
+        } catch (SQLException sqle) {
+            throw sqle;
+        }
     }
 
     public static Context getContext() {
@@ -103,6 +127,13 @@ public class App extends Application {
             Intent intent = new Intent("location");
             intent.putExtra("data", location);
             LocalBroadcastManager.getInstance(sContext).sendBroadcast(intent);
+
+            // Probably want to refactor where this is
+            NearHazard = HazardDB.nearHazard(location.getLatitude(), location.getLongitude(), location.getAccuracy());
+            if (NearHazard) {
+                Toast.makeText(getBaseContext(), "WATCH OUT", Toast.LENGTH_LONG).show();
+                Log.d("M", "Butt");
+            }
         }
     }
 

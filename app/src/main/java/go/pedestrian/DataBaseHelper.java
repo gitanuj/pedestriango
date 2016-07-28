@@ -2,6 +2,7 @@ package go.pedestrian;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
@@ -60,7 +61,6 @@ public class DataBaseHelper extends SQLiteOpenHelper{
 
             }
         }
-
     }
 
     /**
@@ -126,6 +126,8 @@ public class DataBaseHelper extends SQLiteOpenHelper{
         String myPath = DB_PATH + DB_NAME;
         myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
 
+        Cursor query = myDataBase.query("danger_nodes", null, null, null, null, null, null, null);
+        int count = query.getCount();
     }
 
     @Override
@@ -157,11 +159,25 @@ public class DataBaseHelper extends SQLiteOpenHelper{
         String lowerLatString = Double.toString(lat - bound);
         String upperLonString = Double.toString(lon + bound);
         String lowerLonString = Double.toString(lon - bound);
-        return (myDataBase.rawQuery(
-                "SELECT * FROM danger_nodes WHERE lat <= ? AND lat >= ? AND lon <= ? AND lon >= ?",
-                new String[] {
-                    upperLatString, lowerLatString, upperLonString, lowerLonString
-                }
-        ).getCount() > 0);
+
+        String selection = "lat <= ? AND lat >= ? AND lon <= ? AND lon >= ?";
+
+        String[] selectionArgs = new String[] {
+                upperLatString,
+                lowerLatString,
+                upperLonString,
+                lowerLonString
+        };
+
+        Cursor query = myDataBase.query("danger_nodes", null, selection, selectionArgs, null, null, null, null);
+
+        Cursor cursor = myDataBase.rawQuery("SELECT * FROM danger_nodes WHERE lat <= 67.6505 AND lat >= 27.6506 AND lon <= -102.128 AND lon >= -142.128", null); // testing
+        Cursor bb = myDataBase.query("danger_nodes", null, null, null, null, null, null, null); // testing delete
+        int doubt = bb.getCount();  // testing delete
+        int pain = cursor.getCount();  // testing delete
+        int count = query.getCount();
+        query.close();
+        boolean nearHazards = count > 0;
+        return nearHazards;
     }
 }
